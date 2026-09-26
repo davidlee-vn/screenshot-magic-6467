@@ -20,7 +20,7 @@ export const SERVICES = [
 export const STATUSES = [
   { value: "booked", label: "Chờ đến" },
   { value: "received", label: "Đã tiếp nhận" },
-  { value: "in_progress", label: "Đang khám" },
+  { value: "in_progress", label: "Đang siêu âm" },
   { value: "done", label: "Hoàn thành" },
   { value: "cancelled", label: "Đã hủy" },
 ] as const;

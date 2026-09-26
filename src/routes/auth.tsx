@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Stethoscope } from "lucide-react";
+import { LayoutDashboard, Stethoscope } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ export const Route = createFileRoute("/auth")({
       },
       { property: "og:title", content: "Đăng nhập phòng khám — Bác sĩ Đại" },
       { property: "og:description", content: "Quản lý lịch hẹn siêu âm của phòng khám." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -119,6 +121,14 @@ function AuthPage() {
           >
             {loading ? "Đang xử lý..." : mode === "signin" ? "Đăng nhập" : "Đăng ký"}
           </Button>
+          {mode === "signin" && (
+            <Button asChild type="button" variant="secondary" className="h-12 rounded-2xl text-base">
+              <Link to="/demo-dashboard">
+                <LayoutDashboard className="size-5" aria-hidden />
+                Vào xem thử Dashboard (Chế độ Demo)
+              </Link>
+            </Button>
+          )}
         </form>
 
         <button
