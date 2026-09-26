@@ -93,9 +93,18 @@ function BookingPage() {
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (fullName.trim().length < 2) return toast.error("Mẹ vui lòng nhập họ tên.");
-    if (phone.trim().length < 8) return toast.error("Mẹ vui lòng nhập số điện thoại / Zalo.");
-    if (!slot) return toast.error("Mẹ vui lòng chọn một khung giờ.");
+    if (fullName.trim().length < 2) {
+      toast.error("Mẹ vui lòng nhập họ tên.");
+      return;
+    }
+    if (phone.trim().length < 8) {
+      toast.error("Mẹ vui lòng nhập số điện thoại / Zalo.");
+      return;
+    }
+    if (!slot) {
+      toast.error("Mẹ vui lòng chọn một khung giờ.");
+      return;
+    }
     createBooking.mutate();
   }
 
