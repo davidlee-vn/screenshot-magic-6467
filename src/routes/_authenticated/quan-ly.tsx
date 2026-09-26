@@ -16,6 +16,8 @@ export const Route = createFileRoute("/_authenticated/quan-ly")({
       { name: "description", content: "Bảng điều khiển lịch hẹn siêu âm của phòng khám." },
       { property: "og:title", content: "Quản lý lịch hẹn — Bác sĩ Đại" },
       { property: "og:description", content: "Theo dõi và cập nhật trạng thái các ca hẹn." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -101,9 +103,9 @@ function Dashboard() {
       </header>
 
       <section className="mx-auto grid w-full max-w-5xl grid-cols-3 gap-3 px-4">
-        <StatCard label="Ca hẹn hôm nay" value={stats.total} />
-        <StatCard label="Đã khám xong" value={stats.done} />
-        <StatCard label="Chưa đến" value={stats.pending} />
+        <StatCard label="Tổng ca hẹn hôm nay" value={stats.total} />
+        <StatCard label="Ca đã khám" value={stats.done} />
+        <StatCard label="Ca chờ khám" value={stats.pending} />
       </section>
 
       <section className="mx-auto mt-6 w-full max-w-5xl px-4">

@@ -14,3 +14,4 @@
 - Booking writes and slot availability go through the security-definer database functions `create_appointment` and `booked_slots`, never direct table access from the client — guests must never be able to read patient rows.
 - Shared booking constants (slots, services, statuses, Vietnam-time date helpers) live in `src/lib/booking.ts` so the booking page and the clinic dashboard cannot drift apart.
 - The clinic dashboard lives under `src/routes/_authenticated/` and is restricted by the `doctor` role in `public.user_roles`; the first registered account is granted that role automatically.
+- The public demo dashboard uses in-memory sample rows only and must never query or expose real appointment data — it exists solely to preview the clinic workflow safely.

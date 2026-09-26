@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarHeart, CheckCircle2, Download, Droplets, FileHeart, Stethoscope } from "lucide-react";
+import { CalendarHeart, CheckCircle2, Download, Droplets, FileHeart, Sparkles, Stethoscope } from "lucide-react";
 
 import heroImage from "@/assets/hero-mebau.jpg";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,8 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Chọn dịch vụ, chọn ngày và khung giờ 30 phút chỉ trong một phút.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: BookingPage,
@@ -46,7 +48,7 @@ function BookingPage() {
   const maxDate = addDays(today, 60);
   const queryClient = useQueryClient();
 
-  const [service, setService] = useState(SERVICES[0]!);
+  const [service, setService] = useState(SERVICES[0] ?? "");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [week, setWeek] = useState("");
@@ -55,6 +57,9 @@ function BookingPage() {
   const [slot, setSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [booked, setBooked] = useState<Booked | null>(null);
+  const gestationalWeek = week === "" ? null : Number(week);
+  const isFirstTrimesterWindow =
+    gestationalWeek !== null && gestationalWeek >= 11 && gestationalWeek <= 13;
 
   const bookedSlots = useQuery({
     queryKey: ["booked-slots", date],
@@ -179,9 +184,9 @@ function BookingPage() {
             {SERVICES.map((item) => (
               <label
                 key={item}
-                className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
-                  service === item
-                    ? "border-primary bg-primary-soft"
+                className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all ${
+                  service === item || (isFirstTrimesterWindow && item === SERVICES[1])
+                    ? "border-primary bg-primary-soft shadow-card ring-1 ring-primary/30"
                     : "border-border hover:bg-secondary"
                 }`}
               >
@@ -192,7 +197,15 @@ function BookingPage() {
                   checked={service === item}
                   onChange={() => setService(item)}
                 />
-                <span className="font-medium">{item}</span>
+                <span>
+                  <span className="font-medium">{item}</span>
+                  {isFirstTrimesterWindow && item === SERVICES[1] && (
+                    <span className="mt-1 flex items-start gap-1.5 text-sm font-medium text-primary">
+                      <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
+                      Thời điểm vàng khảo sát bất thường NST thai nhi
+                    </span>
+                  )}
+                </span>
               </label>
             ))}
           </div>
@@ -392,13 +405,14 @@ function SuccessView({ booked, onNew }: { booked: Booked; onNew: () => void }) {
     <main className="flex min-h-screen items-center justify-center bg-hero px-4 py-10">
       <div className="w-full max-w-lg rounded-3xl bg-card p-7 text-center shadow-soft">
         <CheckCircle2 className="mx-auto size-14 text-success" aria-hidden />
-        <h1 className="mt-4 text-2xl font-bold">Đặt lịch thành công!</h1>
+        <p className="mt-4 text-sm font-semibold uppercase text-primary">Đặt lịch thành công</p>
+        <h1 className="mt-1 text-2xl font-bold">Phiếu hẹn điện tử</h1>
         <p className="mt-1 text-muted-foreground">
           Phòng khám sẽ liên hệ lại nếu có thay đổi. Mẹ nhớ giữ mã phiếu hẹn nhé.
         </p>
 
         <div className="mt-5 rounded-2xl bg-primary-soft p-5 text-left">
-          <p className="text-sm text-muted-foreground">Mã phiếu hẹn</p>
+          <p className="text-sm text-muted-foreground">Mã đặt lịch</p>
           <p className="text-3xl font-bold tracking-wide text-primary">{booked.code}</p>
           <dl className="mt-4 space-y-2 text-base">
             <div className="flex justify-between gap-3">
@@ -406,12 +420,11 @@ function SuccessView({ booked, onNew }: { booked: Booked; onNew: () => void }) {
               <dd className="font-medium">{booked.name}</dd>
             </div>
             <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Ngày khám</dt>
-              <dd className="font-medium">{formatDateVN(booked.date)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Khung giờ</dt>
-              <dd className="font-medium">{slotLabel(booked.slot)}</dd>
+              <dt className="shrink-0 text-muted-foreground">Ngày giờ hẹn</dt>
+              <dd className="text-right font-medium">
+                {formatDateVN(booked.date)}
+                <span className="block text-primary">{slotLabel(booked.slot)}</span>
+              </dd>
             </div>
             <div className="flex justify-between gap-3">
               <dt className="shrink-0 text-muted-foreground">Dịch vụ</dt>
