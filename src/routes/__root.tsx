@@ -77,19 +77,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Đặt lịch siêu âm thai — Bác sĩ Đại" },
+      {
+        name: "description",
+        content:
+          "Đặt lịch siêu âm thai định kỳ và sàng lọc dị tật thai nhi cùng Bác sĩ Đại, khung giờ 17:00 - 20:30 mỗi ngày.",
+      },
+      { property: "og:title", content: "Đặt lịch siêu âm thai — Bác sĩ Đại" },
+      {
+        property: "og:description",
+        content: "Chăm sóc mẹ bầu: siêu âm định kỳ, sàng lọc dị tật, tim thai chuyên sâu.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
