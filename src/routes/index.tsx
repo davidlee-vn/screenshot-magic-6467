@@ -73,9 +73,9 @@ function BookingPage() {
         p_service: service,
         p_date: date,
         p_slot: slot,
-        p_week: week === "" ? undefined : Number(week),
-        p_day: day === "" ? undefined : Number(day),
-        p_notes: notes === "" ? undefined : notes,
+        ...(week === "" ? {} : { p_week: Number(week) }),
+        ...(day === "" ? {} : { p_day: Number(day) }),
+        ...(notes.trim() === "" ? {} : { p_notes: notes }),
       });
       if (error) throw new Error(error.message);
       return data as string;
