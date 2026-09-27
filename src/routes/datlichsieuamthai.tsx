@@ -13,12 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   SLOTS,
   SERVICES,
-  NT_SCREENING_SERVICE,
   addDays,
   bookingErrorMessage,
   formatDateVN,
   formatGestAge,
-  isNuchalScreeningWindow,
   randomTicketCode,
   slotLabel,
   todayVN,
@@ -55,6 +53,8 @@ type Booked = {
   day: string;
 };
 
+const NT_SERVICE_NAME = "Sàng lọc dị tật hình thái học quý 1 (11w - 13w6d) & Đo độ mờ da gáy";
+
 function BookingPage() {
   const today = todayVN();
   const maxDate = addDays(today, 60);
@@ -69,8 +69,9 @@ function BookingPage() {
   const [slot, setSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [booked, setBooked] = useState<Booked | null>(null);
+
   const gestationalWeek = week === "" ? Number.NaN : Number(week);
-  const isFirstTrimesterWindow = isNuchalScreeningWindow(gestationalWeek);
+  const isFirstTrimesterWindow = gestationalWeek >= 11 && gestationalWeek <= 13;
 
   const bookedSlots = useQuery({
     queryKey: ["booked-slots", date],
@@ -214,12 +215,12 @@ function BookingPage() {
       </section>
 
       <form onSubmit={handleSubmit} className="mx-auto mt-6 w-full max-w-3xl space-y-6 px-4">
-        {/* 1. Chọn dịch vụ khám */}
+        {/* 1. Chọn dịch vụ khám được đặt lên đầu */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">1. Chọn dịch vụ khám</legend>
           <div className="mt-3 grid gap-3">
             {SERVICES.map((item) => {
-              const recommendNuchal = isFirstTrimesterWindow && item === NT_SCREENING_SERVICE;
+              const recommendNuchal = isFirstTrimesterWindow && item === NT_SERVICE_NAME;
               const selected = service === item;
               return (
                 <label
@@ -259,7 +260,7 @@ function BookingPage() {
           </div>
         </fieldset>
 
-        {/* 2. Thông tin mẹ bầu */}
+        {/* 2. Thông tin mẹ bầu ở giữa */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">2. Thông tin mẹ bầu</legend>
           <div className="mt-3 grid gap-4">
@@ -301,8 +302,9 @@ function BookingPage() {
                   onChange={(e) => {
                     const next = e.target.value;
                     setWeek(next);
-                    if (isNuchalScreeningWindow(Number(next))) {
-                      setService(NT_SCREENING_SERVICE);
+                    const n = Number(next);
+                    if (n >= 11 && n <= 13) {
+                      setService(NT_SERVICE_NAME);
                     }
                   }}
                   placeholder="20"
@@ -326,7 +328,7 @@ function BookingPage() {
           </div>
         </fieldset>
 
-        {/* 3. Chọn ngày & khung giờ */}
+        {/* 3. Chọn ngày & khung giờ ở dưới cùng */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">3. Chọn ngày & khung giờ</legend>
           <div className="mt-3 grid gap-2">
