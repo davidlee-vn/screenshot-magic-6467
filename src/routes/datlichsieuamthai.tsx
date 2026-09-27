@@ -99,7 +99,6 @@ function BookingPage() {
     onSuccess: () => {
       const newCode = randomTicketCode();
       
-      // Lưu trữ đồng thời vào bảng appointments trên Supabase
       supabase.from('appointments').insert([
         {
           patient_name: fullName,
@@ -215,7 +214,7 @@ function BookingPage() {
       </section>
 
       <form onSubmit={handleSubmit} className="mx-auto mt-6 w-full max-w-3xl space-y-6 px-4">
-        {/* 1. Chọn dịch vụ khám được đưa lên trên cùng */}
+        {/* 1. Chọn dịch vụ khám */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">1. Chọn dịch vụ khám</legend>
           <div className="mt-3 grid gap-3">
@@ -260,7 +259,7 @@ function BookingPage() {
           </div>
         </fieldset>
 
-        {/* 2. Thông tin mẹ bầu chuyển xuống giữa */}
+        {/* 2. Thông tin mẹ bầu */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">2. Thông tin mẹ bầu</legend>
           <div className="mt-3 grid gap-4">
@@ -327,7 +326,7 @@ function BookingPage() {
           </div>
         </fieldset>
 
-        {/* 3. Chọn ngày & khung giờ giữ ở dưới */}
+        {/* 3. Chọn ngày & khung giờ */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">3. Chọn ngày & khung giờ</legend>
           <div className="mt-3 grid gap-2">
