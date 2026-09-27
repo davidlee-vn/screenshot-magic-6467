@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarHeart, CheckCircle2, Download, Droplets, FileHeart, Sparkles, Stethoscope } from "lucide-react";
+import { CalendarHeart, CheckCircle2, Download, Droplets, FileHeart, Sparkles, Star, Stethoscope } from "lucide-react";
 
 import heroImage from "@/assets/hero-mebau.jpg";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,9 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   SLOTS,
   SERVICES,
+  NT_SCREENING_SERVICE,
   addDays,
   bookingErrorMessage,
   formatDateVN,
+  formatGestAge,
+  isNuchalScreeningWindow,
+  randomTicketCode,
   slotLabel,
   todayVN,
 } from "@/lib/booking";
@@ -41,7 +45,15 @@ export const Route = createFileRoute("/")({
   component: BookingPage,
 });
 
-type Booked = { code: string; date: string; slot: string; service: string; name: string };
+type Booked = {
+  code: string;
+  date: string;
+  slot: string;
+  service: string;
+  name: string;
+  week: string;
+  day: string;
+};
 
 function BookingPage() {
   const today = todayVN();
@@ -57,9 +69,8 @@ function BookingPage() {
   const [slot, setSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [booked, setBooked] = useState<Booked | null>(null);
-  const gestationalWeek = week === "" ? null : Number(week);
-  const isFirstTrimesterWindow =
-    gestationalWeek !== null && gestationalWeek >= 11 && gestationalWeek <= 13;
+  const gestationalWeek = week === "" ? Number.NaN : Number(week);
+  const isFirstTrimesterWindow = isNuchalScreeningWindow(gestationalWeek);
 
   const bookedSlots = useQuery({
     queryKey: ["booked-slots", date],
@@ -85,8 +96,34 @@ function BookingPage() {
       if (error) throw new Error(error.message);
       return data as string;
     },
-    onSuccess: (code) => {
-      setBooked({ code, date, slot, service, name: fullName });
+    onSuccess: () => {
+      const newCode = randomTicketCode();
+      
+      // Lưu trữ đồng thời vào bảng appointments trên Supabase
+      supabase.from('appointments').insert([
+        {
+          patient_name: fullName,
+          phone: phone,
+          gestational_week: week,
+          service_name: service,
+          appointment_date: date,
+          time_slot: slot,
+          ticket_code: newCode,
+        }
+      ]).then(({ error }) => {
+        if (error) console.error('Lỗi lưu Supabase:', error.message);
+        else console.log('Đã lưu lịch hẹn thành công lên mây!');
+      });
+
+      setBooked({
+        code: newCode,
+        date,
+        slot,
+        service,
+        name: fullName,
+        week,
+        day,
+      });
       void queryClient.invalidateQueries({ queryKey: ["booked-slots", date] });
     },
     onError: (error: Error) => {
@@ -148,7 +185,7 @@ function BookingPage() {
               Cổng đặt lịch & chăm sóc mẹ bầu
             </h1>
             <p className="mt-2 text-muted-foreground">
-              Siêu âm thai định kỳ, sàng lọc dị tật hình thái học và siêu âm tim thai chuyên sâu.
+              Siêu âm thai định kỳ, sàng lọc dị tật hình thái học và tim thai chuyên sâu.
               Phòng khám nhận lịch mỗi ngày từ <strong>17:00 đến 20:30</strong>, mỗi ca 30 phút.
             </p>
           </div>
@@ -178,39 +215,52 @@ function BookingPage() {
       </section>
 
       <form onSubmit={handleSubmit} className="mx-auto mt-6 w-full max-w-3xl space-y-6 px-4">
+        {/* 1. Chọn dịch vụ khám được đưa lên trên cùng */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">1. Chọn dịch vụ khám</legend>
           <div className="mt-3 grid gap-3">
-            {SERVICES.map((item) => (
-              <label
-                key={item}
-                className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all ${
-                  service === item || (isFirstTrimesterWindow && item === SERVICES[1])
-                    ? "border-primary bg-primary-soft shadow-card ring-1 ring-primary/30"
-                    : "border-border hover:bg-secondary"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="service"
-                  className="mt-1.5 size-4 accent-[var(--primary)]"
-                  checked={service === item}
-                  onChange={() => setService(item)}
-                />
-                <span>
-                  <span className="font-medium">{item}</span>
-                  {isFirstTrimesterWindow && item === SERVICES[1] && (
-                    <span className="mt-1 flex items-start gap-1.5 text-sm font-medium text-primary">
-                      <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
-                      Thời điểm vàng khảo sát bất thường NST thai nhi
+            {SERVICES.map((item) => {
+              const recommendNuchal = isFirstTrimesterWindow && item === NT_SCREENING_SERVICE;
+              const selected = service === item;
+              return (
+                <label
+                  key={item}
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all ${
+                    recommendNuchal
+                      ? "border-2 border-primary bg-primary-soft shadow-soft ring-2 ring-primary/40"
+                      : selected
+                        ? "border-primary bg-primary-soft shadow-card ring-1 ring-primary/30"
+                        : "border-border hover:bg-secondary"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="service"
+                    className="mt-1.5 size-4 accent-[var(--primary)]"
+                    checked={selected}
+                    onChange={() => setService(item)}
+                  />
+                  <span className="min-w-0">
+                    <span className="flex items-start gap-2 font-medium">
+                      {recommendNuchal && (
+                        <Star className="mt-0.5 size-4 shrink-0 fill-primary text-primary" aria-hidden />
+                      )}
+                      <span>{item}</span>
                     </span>
-                  )}
-                </span>
-              </label>
-            ))}
+                    {recommendNuchal && (
+                      <span className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-success">
+                        <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                        Thời điểm vàng khảo sát bất thường NST thai nhi
+                      </span>
+                    )}
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </fieldset>
 
+        {/* 2. Thông tin mẹ bầu chuyển xuống giữa */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">2. Thông tin mẹ bầu</legend>
           <div className="mt-3 grid gap-4">
@@ -249,7 +299,13 @@ function BookingPage() {
                   min={0}
                   max={45}
                   value={week}
-                  onChange={(e) => setWeek(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setWeek(next);
+                    if (isNuchalScreeningWindow(Number(next))) {
+                      setService(NT_SCREENING_SERVICE);
+                    }
+                  }}
                   placeholder="20"
                   className="h-12 text-base"
                 />
@@ -271,6 +327,7 @@ function BookingPage() {
           </div>
         </fieldset>
 
+        {/* 3. Chọn ngày & khung giờ giữ ở dưới */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
           <legend className="px-1 text-lg font-semibold">3. Chọn ngày & khung giờ</legend>
           <div className="mt-3 grid gap-2">
@@ -347,43 +404,89 @@ function BookingPage() {
   );
 }
 
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+) {
+  const words = text.split(" ");
+  let line = "";
+  let cursorY = y;
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, cursorY);
+      line = word;
+      cursorY += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line, x, cursorY);
+  return cursorY;
+}
+
 function SuccessView({ booked, onNew }: { booked: Booked; onNew: () => void }) {
+  const gestAge = formatGestAge(booked.week, booked.day);
+
   function downloadTicket() {
     const canvas = document.createElement("canvas");
     canvas.width = 900;
-    canvas.height = 620;
+    canvas.height = 1100;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    ctx.fillStyle = "#e8f4f2";
+    ctx.fillRect(0, 0, 900, 1100);
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, 900, 620);
+    roundRect(ctx, 40, 40, 820, 1020, 28);
+    ctx.fill();
+    ctx.strokeStyle = "#5eb8ad";
+    ctx.lineWidth = 4;
+    roundRect(ctx, 58, 58, 784, 984, 22);
+    ctx.stroke();
+
     ctx.fillStyle = "#cdeae6";
-    ctx.fillRect(0, 0, 900, 140);
+    roundRect(ctx, 58, 58, 784, 170, 22);
+    ctx.fill();
+    ctx.fillStyle = "#cdeae6";
+    ctx.fillRect(58, 140, 784, 88);
+
     ctx.fillStyle = "#1f4f4c";
-    ctx.font = "bold 38px 'Be Vietnam Pro', sans-serif";
-    ctx.fillText("PHIẾU HẸN SIÊU ÂM", 48, 70);
+    ctx.font = "bold 36px 'Be Vietnam Pro', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("PHIẾU HẸN ĐIỆN TỬ", 450, 125);
     ctx.font = "22px 'Be Vietnam Pro', sans-serif";
-    ctx.fillText("Bác sĩ Đại - Chăm sóc mẹ bầu", 48, 108);
+    ctx.fillText("Phòng khám Bác sĩ Đại — Siêu âm & sàng lọc thai", 450, 168);
+    ctx.textAlign = "left";
 
     const rows: [string, string][] = [
       ["Mã phiếu hẹn", booked.code],
-      ["Mẹ bầu", booked.name],
-      ["Ngày khám", formatDateVN(booked.date)],
-      ["Khung giờ", slotLabel(booked.slot)],
+      ["Tên mẹ bầu", booked.name],
+      ["Tuần thai", gestAge],
       ["Dịch vụ", booked.service],
+      ["Ngày hẹn", formatDateVN(booked.date)],
+      ["Khung giờ", slotLabel(booked.slot)],
     ];
-    let y = 210;
+
+    let y = 280;
     for (const [label, value] of rows) {
       ctx.fillStyle = "#6b7f85";
-      ctx.font = "20px 'Be Vietnam Pro', sans-serif";
-      ctx.fillText(label, 48, y);
+      ctx.font = "18px 'Be Vietnam Pro', sans-serif";
+      ctx.fillText(label, 100, y);
       ctx.fillStyle = "#123b3a";
-      ctx.font = "bold 24px 'Be Vietnam Pro', sans-serif";
-      ctx.fillText(value.length > 46 ? value.slice(0, 45) + "…" : value, 48, y + 32);
-      y += 82;
+      ctx.font = label === "Mã phiếu hẹn"
+        ? "bold 36px 'Be Vietnam Pro', sans-serif"
+        : "bold 24px 'Be Vietnam Pro', sans-serif";
+      y = wrapCanvasText(ctx, value, 100, y + 36, 680, 32) + 52;
     }
+
     ctx.fillStyle = "#6b7f85";
     ctx.font = "18px 'Be Vietnam Pro', sans-serif";
-    ctx.fillText("Vui lòng đến sớm 10 phút và mang theo hồ sơ thai kỳ.", 48, 585);
+    ctx.fillText("Vui lòng đến sớm 10 phút và mang theo hồ sơ thai kỳ.", 100, 1000);
 
     const link = document.createElement("a");
     link.download = `phieu-hen-${booked.code}.png`;
@@ -391,60 +494,87 @@ function SuccessView({ booked, onNew }: { booked: Booked; onNew: () => void }) {
     link.click();
   }
 
-  async function copyDetails() {
-    const text = `Phiếu hẹn ${booked.code} - ${booked.name} - ${formatDateVN(booked.date)} - ${slotLabel(booked.slot)} - ${booked.service}`;
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Đã sao chép thông tin phiếu hẹn.");
-    } catch {
-      toast.error("Không sao chép được, mẹ vui lòng chụp màn hình nhé.");
-    }
-  }
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-hero px-4 py-10">
-      <div className="w-full max-w-lg rounded-3xl bg-card p-7 text-center shadow-soft">
-        <CheckCircle2 className="mx-auto size-14 text-success" aria-hidden />
-        <p className="mt-4 text-sm font-semibold uppercase text-primary">Đặt lịch thành công</p>
-        <h1 className="mt-1 text-2xl font-bold">Phiếu hẹn điện tử</h1>
-        <p className="mt-1 text-muted-foreground">
-          Phòng khám sẽ liên hệ lại nếu có thay đổi. Mẹ nhớ giữ mã phiếu hẹn nhé.
-        </p>
-
-        <div className="mt-5 rounded-2xl bg-primary-soft p-5 text-left">
-          <p className="text-sm text-muted-foreground">Mã đặt lịch</p>
-          <p className="text-3xl font-bold tracking-wide text-primary">{booked.code}</p>
-          <dl className="mt-4 space-y-2 text-base">
-            <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Mẹ bầu</dt>
-              <dd className="font-medium">{booked.name}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="shrink-0 text-muted-foreground">Ngày giờ hẹn</dt>
-              <dd className="text-right font-medium">
-                {formatDateVN(booked.date)}
-                <span className="block text-primary">{slotLabel(booked.slot)}</span>
-              </dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="shrink-0 text-muted-foreground">Dịch vụ</dt>
-              <dd className="text-right font-medium">{booked.service}</dd>
-            </div>
-          </dl>
+      <div className="w-full max-w-lg space-y-5">
+        <div className="text-center">
+          <CheckCircle2 className="mx-auto size-12 text-success" aria-hidden />
+          <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-primary">
+            Đặt lịch thành công
+          </p>
         </div>
 
-        <div className="mt-5 grid gap-3">
+        <article className="overflow-hidden rounded-3xl border-2 border-primary bg-card text-left shadow-soft">
+          <header className="bg-gradient-primary px-6 py-5 text-center text-primary-foreground">
+            <p className="flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-[0.2em]">
+              <Star className="size-4 fill-current" aria-hidden />
+              Phiếu hẹn điện tử
+            </p>
+            <h1 className="mt-1 text-xl font-bold">Phòng khám Bác sĩ Đại</h1>
+          </header>
+
+          <div className="px-6 py-5">
+            <p className="text-sm text-muted-foreground">Mã phiếu hẹn</p>
+            <p className="mt-1 text-3xl font-bold tracking-[0.18em] text-primary">{booked.code}</p>
+
+            <dl className="mt-5 divide-y divide-border">
+              <TicketRow label="Tên mẹ bầu" value={booked.name} />
+              <TicketRow label="Tuần thai" value={gestAge} />
+              <TicketRow label="Dịch vụ" value={booked.service} />
+              <TicketRow label="Ngày hẹn" value={formatDateVN(booked.date)} />
+              <TicketRow label="Khung giờ" value={slotLabel(booked.slot)} accent />
+            </dl>
+
+            <p className="mt-5 text-sm text-muted-foreground">
+              Mẹ vui lòng đến sớm 10 phút và mang theo hồ sơ thai kỳ.
+            </p>
+          </div>
+        </article>
+
+        <div className="grid gap-3">
           <Button onClick={downloadTicket} className="h-12 rounded-2xl bg-gradient-primary text-base">
             <Download className="size-5" aria-hidden /> Tải ảnh phiếu hẹn
           </Button>
-          <Button variant="secondary" onClick={copyDetails} className="h-12 rounded-2xl text-base">
-            Sao chép thông tin để gửi Zalo
-          </Button>
-          <Button variant="ghost" onClick={onNew} className="h-12 rounded-2xl text-base">
-            Đặt thêm một lịch khác
+          <Button variant="secondary" onClick={onNew} className="h-12 rounded-2xl text-base">
+            Đặt lịch khám mới
           </Button>
         </div>
       </div>
     </main>
   );
+}
+
+function TicketRow({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="flex justify-between gap-4 py-3">
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className={`text-right font-medium ${accent ? "text-primary" : ""}`}>{value}</dd>
+    </div>
+  );
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
 }
