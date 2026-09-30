@@ -17,7 +17,6 @@ import {
   bookingErrorMessage,
   formatDateVN,
   formatGestAge,
-  randomTicketCode,
   slotLabel,
   todayVN,
 } from "@/lib/booking";
@@ -97,26 +96,9 @@ function BookingPage() {
       if (error) throw new Error(error.message);
       return data as string;
     },
-    onSuccess: () => {
-      const newCode = randomTicketCode();
-      
-      supabase.from('appointments').insert([
-        {
-          patient_name: fullName,
-          phone: phone,
-          gestational_week: week,
-          service_name: service,
-          appointment_date: date,
-          time_slot: slot,
-          ticket_code: newCode,
-        }
-      ]).then(({ error }) => {
-        if (error) console.error('Lỗi lưu Supabase:', error.message);
-        else console.log('Đã lưu lịch hẹn thành công lên mây!');
-      });
-
+    onSuccess: (code) => {
       setBooked({
-        code: newCode,
+        code,
         date,
         slot,
         service,
@@ -215,54 +197,9 @@ function BookingPage() {
       </section>
 
       <form onSubmit={handleSubmit} className="mx-auto mt-6 w-full max-w-3xl space-y-6 px-4">
-        {/* 1. Chọn dịch vụ khám được đặt lên đầu */}
+        {/* 1. Thông tin mẹ bầu */}
         <fieldset className="rounded-3xl bg-card p-6 shadow-card">
-          <legend className="px-1 text-lg font-semibold">1. Chọn dịch vụ khám</legend>
-          <div className="mt-3 grid gap-3">
-            {SERVICES.map((item) => {
-              const recommendNuchal = isFirstTrimesterWindow && item === NT_SERVICE_NAME;
-              const selected = service === item;
-              return (
-                <label
-                  key={item}
-                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all ${
-                    recommendNuchal
-                      ? "border-2 border-primary bg-primary-soft shadow-soft ring-2 ring-primary/40"
-                      : selected
-                        ? "border-primary bg-primary-soft shadow-card ring-1 ring-primary/30"
-                        : "border-border hover:bg-secondary"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="service"
-                    className="mt-1.5 size-4 accent-[var(--primary)]"
-                    checked={selected}
-                    onChange={() => setService(item)}
-                  />
-                  <span className="min-w-0">
-                    <span className="flex items-start gap-2 font-medium">
-                      {recommendNuchal && (
-                        <Star className="mt-0.5 size-4 shrink-0 fill-primary text-primary" aria-hidden />
-                      )}
-                      <span>{item}</span>
-                    </span>
-                    {recommendNuchal && (
-                      <span className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-success">
-                        <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                        Thời điểm vàng khảo sát bất thường NST thai nhi
-                      </span>
-                    )}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
-
-        {/* 2. Thông tin mẹ bầu ở giữa */}
-        <fieldset className="rounded-3xl bg-card p-6 shadow-card">
-          <legend className="px-1 text-lg font-semibold">2. Thông tin mẹ bầu</legend>
+          <legend className="px-1 text-lg font-semibold">1. Thông tin mẹ bầu</legend>
           <div className="mt-3 grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Họ tên mẹ bầu *</Label>
@@ -325,6 +262,51 @@ function BookingPage() {
                 />
               </div>
             </div>
+          </div>
+        </fieldset>
+
+        {/* 2. Chọn dịch vụ khám */}
+        <fieldset className="rounded-3xl bg-card p-6 shadow-card">
+          <legend className="px-1 text-lg font-semibold">2. Chọn dịch vụ khám</legend>
+          <div className="mt-3 grid gap-3">
+            {SERVICES.map((item) => {
+              const recommendNuchal = isFirstTrimesterWindow && item === NT_SERVICE_NAME;
+              const selected = service === item;
+              return (
+                <label
+                  key={item}
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all ${
+                    recommendNuchal
+                      ? "border-2 border-primary bg-primary-soft shadow-soft ring-2 ring-primary/40"
+                      : selected
+                        ? "border-primary bg-primary-soft shadow-card ring-1 ring-primary/30"
+                        : "border-border hover:bg-secondary"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="service"
+                    className="mt-1.5 size-4 accent-[var(--primary)]"
+                    checked={selected}
+                    onChange={() => setService(item)}
+                  />
+                  <span className="min-w-0">
+                    <span className="flex items-start gap-2 font-medium">
+                      {recommendNuchal && (
+                        <Star className="mt-0.5 size-4 shrink-0 fill-primary text-primary" aria-hidden />
+                      )}
+                      <span>{item}</span>
+                    </span>
+                    {recommendNuchal && (
+                      <span className="mt-1.5 flex items-start gap-1.5 text-sm font-medium text-success">
+                        <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                        Thời điểm vàng khảo sát bất thường NST thai nhi
+                      </span>
+                    )}
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </fieldset>
 

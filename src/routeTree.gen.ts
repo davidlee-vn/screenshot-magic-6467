@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DatlichsieuamthaiRouteImport } from './routes/datlichsieuamthai'
 import { Route as DemoDashboardRouteImport } from './routes/demo-dashboard'
 import { Route as AuthenticatedQuanLyRouteImport } from './routes/_authenticated/quan-ly'
 
@@ -29,6 +30,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DatlichsieuamthaiRoute = DatlichsieuamthaiRouteImport.update({
+  id: '/datlichsieuamthai',
+  path: '/datlichsieuamthai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoDashboardRoute = DemoDashboardRouteImport.update({
   id: '/demo-dashboard',
   path: '/demo-dashboard',
@@ -43,12 +49,14 @@ const AuthenticatedQuanLyRoute = AuthenticatedQuanLyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/datlichsieuamthai': typeof DatlichsieuamthaiRoute
   '/demo-dashboard': typeof DemoDashboardRoute
   '/quan-ly': typeof AuthenticatedQuanLyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/datlichsieuamthai': typeof DatlichsieuamthaiRoute
   '/demo-dashboard': typeof DemoDashboardRoute
   '/quan-ly': typeof AuthenticatedQuanLyRoute
 }
@@ -57,19 +65,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/datlichsieuamthai': typeof DatlichsieuamthaiRoute
   '/demo-dashboard': typeof DemoDashboardRoute
   '/_authenticated/quan-ly': typeof AuthenticatedQuanLyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/demo-dashboard' | '/quan-ly'
+  fullPaths:
+    '/' | '/auth' | '/datlichsieuamthai' | '/demo-dashboard' | '/quan-ly'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/demo-dashboard' | '/quan-ly'
+  to: '/' | '/auth' | '/datlichsieuamthai' | '/demo-dashboard' | '/quan-ly'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/datlichsieuamthai'
     | '/demo-dashboard'
     | '/_authenticated/quan-ly'
   fileRoutesById: FileRoutesById
@@ -78,6 +89,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  DatlichsieuamthaiRoute: typeof DatlichsieuamthaiRoute
   DemoDashboardRoute: typeof DemoDashboardRoute
 }
 
@@ -102,6 +114,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/datlichsieuamthai': {
+      id: '/datlichsieuamthai'
+      path: '/datlichsieuamthai'
+      fullPath: '/datlichsieuamthai'
+      preLoaderRoute: typeof DatlichsieuamthaiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo-dashboard': {
@@ -136,6 +155,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  DatlichsieuamthaiRoute: DatlichsieuamthaiRoute,
   DemoDashboardRoute: DemoDashboardRoute,
 }
 export const routeTree = rootRouteImport

@@ -57,6 +57,11 @@ export function formatDateVN(iso: string): string {
   return `${weekday}, ${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
 }
 
+export function formatGestAge(week: string, day: string): string {
+  if (week === "") return day === "" ? "Chưa cung cấp" : `${day} ngày`;
+  return day === "" ? `${week} tuần` : `${week} tuần ${day} ngày`;
+}
+
 export const BOOKING_ERRORS: Record<string, string> = {
   SLOT_TAKEN: "Khung giờ này vừa có người đặt. Mẹ vui lòng chọn khung giờ khác nhé.",
   INVALID_DATE: "Ngày khám không hợp lệ (chỉ nhận đặt trong vòng 60 ngày tới).",

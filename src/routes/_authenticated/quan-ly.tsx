@@ -55,7 +55,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*")
+        .select("id, code, full_name, phone, gest_week, gest_day, service, appt_date, slot_start, notes, status")
         .order("appt_date", { ascending: false })
         .order("slot_start", { ascending: true });
       if (error) throw error;
@@ -125,6 +125,8 @@ function Dashboard() {
             </p>
             {appointments.isLoading ? (
               <Empty text="Đang tải..." />
+            ) : appointments.isError ? (
+              <QueryError onRetry={() => void appointments.refetch()} />
             ) : (
               <div className="grid gap-3">
                 {SLOTS.map((s) => {
@@ -153,7 +155,9 @@ function Dashboard() {
           </TabsContent>
 
           <TabsContent value="all" className="mt-4">
-            {rows.length === 0 ? (
+            {appointments.isError ? (
+              <QueryError onRetry={() => void appointments.refetch()} />
+            ) : rows.length === 0 ? (
               <Empty text="Chưa có lịch hẹn nào." />
             ) : (
               <div className="grid gap-3">
@@ -248,4 +252,15 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
 function Empty({ text }: { text: string }) {
   return <div className="rounded-3xl bg-card p-8 text-center text-muted-foreground">{text}</div>;
+}
+
+function QueryError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div role="alert" className="rounded-3xl bg-card p-8 text-center shadow-card">
+      <p className="text-destructive">Không tải được lịch hẹn.</p>
+      <Button variant="outline" className="mt-3" onClick={onRetry}>
+        Thử tải lại
+      </Button>
+    </div>
+  );
 }
