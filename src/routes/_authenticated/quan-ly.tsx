@@ -70,7 +70,7 @@ function Dashboard() {
   const stats = {
     total: todayRows.filter((r) => r.status !== "cancelled").length,
     done: todayRows.filter((r) => r.status === "done").length,
-    pending: todayRows.filter((r) => r.status === "booked").length,
+    pending: todayRows.filter((r) => r.status !== "cancelled" && r.status !== "done").length,
   };
 
   async function updateStatus(id: string, status: string) {
